@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
+use App\Filament\Resources\TransactionResource\Pages;
+use App\Filament\Resources\TransactionResource\RelationManagers;
 use App\Models\Category;
+use App\Models\Transaction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,11 +14,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CategoryResource extends Resource
-{
-    protected static ?string $model = Category::class;
 
-    protected static ?string $navigationIcon = 'heroicon-c-numbered-list';
+class TransactionResource extends Resource
+{
+    protected static ?string $model = Transaction::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
@@ -26,8 +28,17 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Toggle::make('is_expense')
+                Forms\Components\Select::make('category_id')
+                    ->relationship('category', 'name')
                     ->required(),
+                Forms\Components\DatePicker::make('date_transaction')
+                    ->required(),
+                Forms\Components\TextInput::make('ammount')
+                    ->required()
+                    ->numeric(),
+                Forms\Components\TextInput::make('note')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\FileUpload::make('image')
                     ->image()
                     ->required(),
@@ -38,25 +49,32 @@ class CategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('image'),
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('is_expense')
+                Tables\Columns\ImageColumn::make('category.image')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('category.name')
+                    ->description(fn (Transaction $record): string => $record->name, position: 'behind')
+                    ->label('Transaksi'),
+                Tables\Columns\IconColumn::make('category.is_expense')
                     ->label('Tipe')
-                    ->trueIcon('heroicon-s-arrow-up-circle')
-                    ->falseIcon('heroicon-s-arrow-down-circle')
+                    ->trueIcon('heroicon-o-arrow-up-circle')
+                    ->falseIcon('heroicon-o-arrow-down-circle')
                     ->trueColor('danger')
                     ->falseColor('success')
                     ->boolean(),
+                Tables\Columns\TextColumn::make('date_transaction')
+                    ->label('Tanggal')
+                    ->date()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('ammount')
+                    ->label('Amount')
+                    ->numeric()
+                    ->prefix('Rp. ')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -84,9 +102,9 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'index' => Pages\ListTransactions::route('/'),
+            'create' => Pages\CreateTransaction::route('/create'),
+            'edit' => Pages\EditTransaction::route('/{record}/edit'),
         ];
     }
 }
